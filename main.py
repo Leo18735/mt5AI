@@ -52,7 +52,6 @@ def main():
     for variation in tqdm.tqdm(variations):
         if dumper.exists(variation):
             time.sleep(.5)
-            tqdm.tqdm().
             continue
         dumper.add((variation, bt.run(**variation)))
 
