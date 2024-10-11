@@ -6,16 +6,15 @@ import numpy as np
 
 
 class Model(abc.ABC):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, x_train: pd.DataFrame, mt5: MT5, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.x_train: pd.DataFrame = None
-        self.mt5: MT5 = None
-        self._model = None
+        self.x_train: pd.DataFrame = x_train
+        self.mt5: MT5 = mt5
         self._scaler = None
+        self._model = None
 
     def train(self, window: int, tp: int, sl: int):
         y_train = self.mt5.get_y(self.x_train, tp * self.mt5.points, sl * self.mt5.points)
-        labels = {x: y_train.tolist().count(x) for x in set(y_train)}
         self._scaler = self.get_scaler()
         x_train: np.ndarray = self._scaler.fit_transform(np.array(self.x_train[self.mt5.signals]))
         x_train, y_train = self._prepare_train(x_train, y_train, window)

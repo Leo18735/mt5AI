@@ -102,7 +102,7 @@ class MT5:
             buy = check_buy(x_train.iloc[i:])
             sell = check_sell(x_train.iloc[i:])
             if buy and sell:
-                raise Exception("This should not happen!")
+                continue
             if buy:
                 y.iloc[i] = 2
             if sell:

@@ -5,13 +5,13 @@ import tqdm
 
 class MLStrategy(Strategy):
     model: Model = None
-    window: int = 5
-    tp: int = 200
-    sl: int = 100
+    window: int = None
+    tp: int = None
+    sl: int = None
+    volume = None
 
     _tqdm = None
     tqdm = False
-    volume = None
 
     def init(self):
         self.model.train(self.window, self.tp, self.sl)
