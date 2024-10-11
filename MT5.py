@@ -4,13 +4,9 @@ import MetaTrader5
 import numpy as np
 import pandas_ta as pd_ta
 from sklearn.model_selection import train_test_split
-
+import pickle
 
 MetaTrader5.initialize()
-
-
-def store_wrapper(func):
-    def wrapper(*args, **kwargs):
 
 
 class MT5:
@@ -20,7 +16,6 @@ class MT5:
         self._signals = []
         self._points = MetaTrader5.symbol_info(self._symbol).point
 
-    @store_wrapper
     def get_rates(self, amount: int, timeframe):
         rates = MetaTrader5.copy_rates_from(
             self._symbol,
@@ -28,6 +23,8 @@ class MT5:
             datetime.datetime(year=2024, month=1, day=1),
             amount
         )
+        with open("rates.pickle", "wb") as f:
+            pickle.dump(rates, f)
         return pd.DataFrame(
             rates,
             index=np.array([datetime.datetime.fromtimestamp(x) for x in rates["time"]])
