@@ -1,57 +1,43 @@
 from backtesting import Backtest
-from MT5 import MT5
-from Model import TFModel, XGBoost
-from MLStrategy import MLStrategy
-import MetaTrader5
+from Classes.MT5 import MT5
+from Classes.MLStrategy import MLStrategy
+import Classes.MetaTrader5 as MetaTrader5
+from Classes.Models.TFModel import TFModel
+from Classes.Models.XGBoostModel import XGBoostModel
 
 
+def main():
+    symbol: str = "EURUSD"
+    timeframe: int = MetaTrader5.TIMEFRAME_D1
+    amount: int = 3_000
+    test_split: float = .05
+    MLStrategy.model = XGBoostModel()
 
-def prep_env(model_object, volume, epochs, batch_size, rates_amount, timeframe, test_size, symbol, window, threshold, load):
-    mt5 = MT5(symbol, window)
-    x_train, x_test, y_train = mt5.get_data(rates_amount, test_size, timeframe, threshold * mt5.get_points())
-    model_object.set_trained_model(x_train, y_train, mt5, epochs, batch_size, load)
-    MLStrategy.set_values(model_object, volume, window, mt5, x_test.shape[0])
-    return x_test
+    mt5 = MT5(symbol)
+    x_train, x_test = mt5.prepare_data(timeframe, amount, test_split)
+    MLStrategy.model.x_train = x_train
+    MLStrategy.model.mt5 = mt5
 
-
-def main(model_class, volume, epochs, batch_size, rates_amount, timeframe, test_size, symbol, window, cash, commission, margin, threshold, load):
-    x_test = prep_env(model_class, volume, epochs, batch_size, rates_amount, timeframe, test_size, symbol, window, threshold, load)
+    MLStrategy.volume = 5_000
 
     bt = Backtest(
         x_test,
         MLStrategy,
-        cash=cash,
-        commission=commission,
-        margin=margin,
+        **mt5.get_broker_conditions(),
         trade_on_close=True)
+    print("Run")
 
-    result = bt.run()
-    print(result)
+    _, heatmap = bt.optimize(
+        window=range(5, 45, 5),
+        sl=range(100, 500, 50),
+        tp=range(100, 500, 50),
+        constraint=lambda x: x.window and x.tp and x.sl and x.tp >= x.sl,
+        maximize='Equity Final [$]',
+        return_heatmap=True
+    )
+    print(heatmap)
     bt.plot()
 
 
-def run():
-    volume = 5_000
-    cash = 10_000
-    commission = .0006
-    margin = 1 / 30
-
-    epochs = 100
-    batch_size = 32
-
-    window = 30
-    threshold = 30
-
-    rates_amount = 25_000
-    timeframe = MetaTrader5.TIMEFRAME_D1
-    test_size = .1
-    symbol = "EURUSD"
-
-    load = True
-    model_class = XGBoost
-
-    main(model_class(), volume, epochs, batch_size, rates_amount, timeframe, test_size, symbol, window, cash, commission, margin, threshold, load)
-
-
 if __name__ == '__main__':
-    run()
+    main()

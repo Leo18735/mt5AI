@@ -1,0 +1,5 @@
+.idea/
+MLStrategy*.html
+venv/
+Classes/__pycache__/
+Classes/Models/__pycache__/
