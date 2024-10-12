@@ -1,7 +1,7 @@
 import os
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 import time
-from backtesting import Backtest
+from backtesting import Backtest  # ide is lying. backtesting is installed!!
 from Classes.Dumper import Dumper
 from Classes.MT5 import MT5
 from Classes.MLStrategy import MLStrategy

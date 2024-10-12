@@ -1,3 +1,4 @@
+import numpy as np
 from backtesting import Strategy  # ide is lying. backtesting is installed!!
 from Classes.Models.Model import Model
 import tqdm
@@ -14,19 +15,17 @@ class MLStrategy(Strategy):
     _tqdm = None
     tqdm = False
 
-    @time_it
     def init(self):
         self.model.train(self.window, self.tp, self.sl)
+        self.data.df["y"] = np.nan
+        self.data.df.loc[self.data.df.index[self.window-1]:, "y"] = self.model.predict(self.data.df, self.window)[self.window - 1:]
         if self.tqdm:
             self._tqdm = tqdm.tqdm(total=self.data.df.shape[0], leave=False)
 
     def next(self):
         if self.tqdm:
             self._tqdm.update(1)
-        x_test = self.model.prepare_predict(self.data.df[self.model.mt5.signals], self.window)
-        if x_test.shape[0] < self.window:
-            return
-        prediction = self.model.predict(x_test)
+        prediction = self.data.df["y"].iloc[-1]
         if prediction == 2:
             if not self.position:
                 self.buy(size=self.volume)

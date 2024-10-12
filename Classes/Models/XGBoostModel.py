@@ -3,11 +3,9 @@ import xgboost
 from Classes.Models.Model import Model
 import pandas as pd
 
-from utils import time_it
-
 
 class XGBoostModel(Model):
-    def _prepare_train(self, x_train: np.ndarray, y_train: np.ndarray, window: int) -> tuple[np.ndarray, np.ndarray]:
+    def _prepare_train(self, x_train: np.ndarray, window: int) -> np.ndarray:
         result = np.zeros(shape=(x_train.shape[0], window * x_train.shape[1]))
         result[:] = np.nan
 
@@ -15,13 +13,7 @@ class XGBoostModel(Model):
             x = x_train[i-window+1:i+1]
             result[i] = x.reshape(np.prod(x.shape))
 
-        mask = np.isnan(result)
-        for i in reversed(range(len(result.shape) - 1)):
-            mask = mask.any(axis=i + 1)
-
-        self._model_shape = result.shape[1:]
-
-        return result[~mask], y_train[~mask]
+        return result
 
     def get_model(self):
         return xgboost.XGBClassifier(objective='binary:logistic',
@@ -31,12 +23,13 @@ class XGBoostModel(Model):
                                      random_state=1,
                                      device="gpu")
 
-    def prepare_predict(self, x_test: pd.DataFrame, window: int) -> np.ndarray:
-        return np.array(x_test.iloc[-window:])
-
-    def predict(self, x_test: np.ndarray) -> int:
-        return self._model.predict(self._scaler.transform(x_test).reshape(1, np.prod(x_test.shape)))
-
-    @time_it
     def _fit(self, x_train: np.ndarray, y_train: np.ndarray):
         self._model.fit(x_train[:-1], y_train[1:])
+
+    def predict(self, x_test: pd.DataFrame, window: int) -> np.ndarray:
+        return self._model.predict(
+            self._prepare_train(
+                self._scaler.fit_transform(np.array(x_test[self.mt5.signals])),
+                window
+            )
+        )
