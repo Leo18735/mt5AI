@@ -2,7 +2,8 @@ import numpy as np
 import xgboost
 from Classes.Models.Model import Model
 import pandas as pd
-import cupy as cp
+
+from utils import time_it
 
 
 class XGBoostModel(Model):
@@ -36,5 +37,6 @@ class XGBoostModel(Model):
     def predict(self, x_test: np.ndarray) -> int:
         return self._model.predict(self._scaler.transform(x_test).reshape(1, np.prod(x_test.shape)))
 
+    @time_it
     def _fit(self, x_train: np.ndarray, y_train: np.ndarray):
-        self._model.fit(cp.array(x_train[:-1]), cp.array(y_train[1:]))
+        self._model.fit(x_train[:-1], y_train[1:])

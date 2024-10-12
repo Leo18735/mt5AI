@@ -1,5 +1,6 @@
+import os
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 import time
-
 from backtesting import Backtest
 from Classes.Dumper import Dumper
 from Classes.MT5 import MT5
