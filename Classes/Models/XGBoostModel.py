@@ -2,6 +2,7 @@ import numpy as np
 import xgboost
 from Classes.Models.Model import Model
 import pandas as pd
+import cupy as cp
 
 
 class XGBoostModel(Model):
@@ -26,10 +27,14 @@ class XGBoostModel(Model):
                                      max_depth=10,
                                      learning_rate=0.3,
                                      n_estimators=500,
-                                     random_state=1)
+                                     random_state=1,
+                                     device="gpu")
 
     def prepare_predict(self, x_test: pd.DataFrame, window: int) -> np.ndarray:
         return np.array(x_test.iloc[-window:])
 
     def predict(self, x_test: np.ndarray) -> int:
         return self._model.predict(self._scaler.transform(x_test).reshape(1, np.prod(x_test.shape)))
+
+    def _fit(self, x_train: np.ndarray, y_train: np.ndarray):
+        self._model.fit(cp.array(x_train[:-1]), cp.array(y_train[1:]))

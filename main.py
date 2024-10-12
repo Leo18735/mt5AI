@@ -21,11 +21,10 @@ def create_variations(args: dict) -> list[dict]:
     return variations
 
 
-
 def main():
     symbol: str = "EURUSD"
-    timeframe: int = MetaTrader5.TIMEFRAME_H1
-    amount: int = 50_000
+    timeframe: int = MetaTrader5.TIMEFRAME_D1
+    amount: int = 15_000
     test_split: float = .1
 
     mt5 = MT5(symbol)
@@ -51,7 +50,7 @@ def main():
 
     for variation in tqdm.tqdm(variations):
         if dumper.exists(variation):
-            time.sleep(.5)
+            time.sleep(.2)
             continue
         dumper.add((variation, bt.run(**variation)))
 

@@ -19,6 +19,9 @@ class Model(abc.ABC):
         x_train: np.ndarray = self._scaler.fit_transform(np.array(self.x_train[self.mt5.signals]))
         x_train, y_train = self._prepare_train(x_train, y_train, window)
         self._model = self.get_model()
+        self._fit(x_train[:-1], y_train[1:])
+
+    def _fit(self, x_train: np.ndarray, y_train: np.ndarray):
         self._model.fit(x_train[:-1], y_train[1:])
 
     @abc.abstractmethod

@@ -1,6 +1,7 @@
 from backtesting import Strategy  # ide is lying. backtesting is installed!!
 from Classes.Models.Model import Model
 import tqdm
+from utils import time_it
 
 
 class MLStrategy(Strategy):
@@ -13,6 +14,7 @@ class MLStrategy(Strategy):
     _tqdm = None
     tqdm = False
 
+    @time_it
     def init(self):
         self.model.train(self.window, self.tp, self.sl)
         if self.tqdm:
