@@ -6,26 +6,16 @@ from Classes.Dumper import Dumper
 from Classes.MT5 import MT5
 from Classes.MLStrategy import MLStrategy
 import Classes.MetaTrader5 as MetaTrader5
-from Classes.Models.TFModel import TFModel
 from Classes.Models.XGBoostModel import XGBoostModel
 import tqdm
+from utils import create_variations, plot
 
-
-def create_variations(args: dict) -> list[dict]:
-    variations = [{}]
-    for key, values in args.items():
-        variations_old = variations.copy()
-        variations = []
-        for value in values:
-            for variation in variations_old:
-                variations.append({**variation, key: value})
-    return variations
 
 
 def main():
     symbol: str = "EURUSD"
     timeframe: int = MetaTrader5.TIMEFRAME_D1
-    amount: int = 15_000
+    amount: int = 12_410
     test_split: float = .1
 
     mt5 = MT5(symbol)
@@ -38,25 +28,34 @@ def main():
         MLStrategy,
         **mt5.get_broker_conditions(),
         trade_on_close=True)
-    print("Run")
 
     variations = create_variations({
-        "window": range(5, 50, 5),
-        "sl": range(100, 500, 50),
-        "tp": range(100, 500, 50),
+        "window": range(10, 40, 5),
+        "direction": range(100, 2_000, 50),
         "volume": [5000]
-    })
+    }, lambda x: True)
+    data = {"symbol": symbol, "timeframe": timeframe, "amount": amount, "split": test_split}
 
     dumper: Dumper = Dumper("dump.pickle")
 
     for variation in tqdm.tqdm(variations):
-        if dumper.exists(variation):
-            time.sleep(.2)
+        key = {**data, "variation": variation}
+        if dumper.exists(key):
+            time.sleep(0.15)
             continue
-        dumper.add((variation, bt.run(**variation)))
+        dumper.add((key, bt.run(**variation)))
 
-    for result in sorted(dumper.get_results(), key=lambda x: x[1]["Equity Final [$]"]):
-        print(f"{result[1]['Equity Final [$]']}: {result[0]}")
+    sort: str = "Win Rate [%]"
+
+    sorted_result = sorted(dumper.get_results(), key=lambda x: x[1][sort], reverse=True)
+
+    for result in sorted_result:
+        print(f"{result[1][sort]}: {result[0]['variation']}")
+
+    print("\n")
+    print(bt.run(**sorted_result[0][0]["variation"]))
+    bt.plot()
+    plot(bt._data, bt._strategy.model.y)
 
 
 if __name__ == '__main__':

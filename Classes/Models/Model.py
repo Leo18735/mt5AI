@@ -10,12 +10,13 @@ class Model(abc.ABC):
         super().__init__(*args, **kwargs)
         self.x_train: pd.DataFrame = x_train
         self.mt5: MT5 = mt5
+        self.y: pd.Series = None
         self._scaler = None
         self._model = None
         self._model_shape = None
 
-    def train(self, window: int, tp: int, sl: int):
-        y_train = self.mt5.get_y(self.x_train, tp * self.mt5.points, sl * self.mt5.points)
+    def train(self, window: int, direction: int):
+        y_train = self.mt5.get_y(self.x_train, direction * self.mt5.points)
         self._scaler = self.get_scaler()
         x_train: np.ndarray = self._scaler.fit_transform(np.array(self.x_train[self.mt5.signals]))
         x_train = self._prepare_train(x_train, window)

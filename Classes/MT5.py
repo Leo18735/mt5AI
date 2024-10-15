@@ -2,6 +2,8 @@ import pandas as pd
 import datetime
 import numpy as np
 import pandas_ta as pd_ta
+import tqdm
+
 import Classes.MetaTrader5 as MetaTrader5
 
 
@@ -78,29 +80,20 @@ class MT5:
                 "margin": 1 / 30}
 
     @staticmethod
-    def get_y(x_train: pd.DataFrame, tp: float, sl: float):
-        def check_buy(cut_rates: pd.DataFrame) -> bool:
-            price = cut_rates["Open"].iloc[0]
-            for f in range(cut_rates.shape[0]):
-                if cut_rates["Low"].iloc[f] < price - sl:
-                    return False
-                if cut_rates["High"].iloc[f] > price + tp:
-                    return True
-            return False
-
-        def check_sell(cut_rates: pd.DataFrame) -> bool:
-            price = cut_rates["Open"].iloc[0]
-            for f in range(cut_rates.shape[0]):
-                if cut_rates["High"].iloc[f] > price + sl:
-                    return False
-                if cut_rates["Low"].iloc[f] < price - tp:
-                    return True
-            return False
-
+    def get_y(x_train: pd.DataFrame, direction: float):
         y = pd.Series(1, index=x_train["Close"].index)
         for i in range(0, x_train.shape[0]):
-            buy = check_buy(x_train.iloc[i:])
-            sell = check_sell(x_train.iloc[i:])
+            price = x_train.loc[x_train.index[i], "Open"]
+            buy = False
+            sell = False
+            for f in range(i, x_train.shape[0]):
+                if x_train.loc[x_train.index[f], "High"] > price + direction:
+                    buy = True
+                if x_train.loc[x_train.index[f], "Low"] < price - direction:
+                    sell = True
+                if buy or sell:
+                    break
+
             if buy and sell:
                 continue
             if buy:
