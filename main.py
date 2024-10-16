@@ -5,7 +5,7 @@ from backtesting import Backtest  # ide is lying. backtesting is installed!!
 from Classes.Dumper import Dumper
 from Classes.MT5 import MT5
 from Classes.MLStrategy import MLStrategy
-import Classes.MetaTrader5 as MetaTrader5
+import MetaTrader5
 from Classes.Models.XGBoostModel import XGBoostModel
 import tqdm
 from utils import create_variations, plot
@@ -14,9 +14,10 @@ from utils import create_variations, plot
 
 def main():
     symbol: str = "EURUSD"
-    timeframe: int = MetaTrader5.TIMEFRAME_D1
-    amount: int = 12_410
-    test_split: float = .1
+    timeframe: int = MetaTrader5.TIMEFRAME_H1
+    amount: int = 20_000 * 24
+    test_split: float = .01
+    dump: bool = False
 
     mt5 = MT5(symbol)
     x_train, x_test = mt5.prepare_data(timeframe, amount, test_split)
@@ -26,17 +27,16 @@ def main():
     bt = Backtest(
         x_test,
         MLStrategy,
-        **mt5.get_broker_conditions(),
-        trade_on_close=True)
+        **mt5.get_broker_conditions())
 
     variations = create_variations({
-        "window": range(10, 40, 5),
-        "direction": range(100, 2_000, 50),
-        "volume": [5000]
+        "window": range(20, 35, 5),
+        "direction": range(300, 450, 50),
+        "volume": [10_000]
     }, lambda x: True)
     data = {"symbol": symbol, "timeframe": timeframe, "amount": amount, "split": test_split}
 
-    dumper: Dumper = Dumper("dump.pickle")
+    dumper: Dumper = Dumper("dump.pickle", dump)
 
     for variation in tqdm.tqdm(variations):
         key = {**data, "variation": variation}
@@ -45,12 +45,14 @@ def main():
             continue
         dumper.add((key, bt.run(**variation)))
 
-    sort: str = "Win Rate [%]"
+    sort: str = "Equity Final [$]"
+    show: list[str] = ["# Trades"]
 
     sorted_result = sorted(dumper.get_results(), key=lambda x: x[1][sort], reverse=True)
 
     for result in sorted_result:
-        print(f"{result[1][sort]}: {result[0]['variation']}")
+        show_attrs = {x: result[1][x] for x in show}
+        print(f"{result[1][sort]}: {show_attrs}: {result[0]['variation']}")
 
     print("\n")
     print(bt.run(**sorted_result[0][0]["variation"]))

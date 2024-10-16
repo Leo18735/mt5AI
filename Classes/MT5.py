@@ -2,9 +2,7 @@ import pandas as pd
 import datetime
 import numpy as np
 import pandas_ta as pd_ta
-import tqdm
-
-import Classes.MetaTrader5 as MetaTrader5
+import MetaTrader5
 
 
 MetaTrader5.initialize()
@@ -26,9 +24,22 @@ class MT5:
         rates["rsi_14"] = pd_ta.rsi(rates["Close"], length=14)
         rates["ema_10"] = pd_ta.ema(rates["Close"], length=10) - rates["Close"]
         rates["ema_20"] = pd_ta.ema(rates["Close"], length=20) - rates["Close"]
+        rates["atr"] = pd_ta.atr(rates["High"], rates["Low"], rates["Close"], length=14, mamode="rma")
         self.signals += ["diff_open_close", "diff_high_low",
-                          "rsi_7", "rsi_14",
-                          "ema_10", "ema_20"]
+                         "rsi_7", "rsi_14",
+                         "ema_10", "ema_20",
+                         "atr"]
+
+        af0 = 0.02
+        max_af = 0.2
+        psar = pd_ta.psar(rates["High"], rates["Low"], rates["Close"], af0=af0, max_af=max_af)
+        psar[psar.isna()] = 0
+        for name in [f"PSARl_{af0}_{max_af}",
+                     f"PSARs_{af0}_{max_af}",
+                     f"PSARaf_{af0}_{max_af}",
+                     f"PSARr_{af0}_{max_af}"]:
+            rates[name] = psar[name] - rates["Close"]
+            self.signals += [name]
 
         bb_length = 5
         bb_std = 2.0
@@ -37,6 +48,18 @@ class MT5:
                     f"BBM_{bb_length}_{bb_std}",
                     f"BBU_{bb_length}_{bb_std}"]:
             rates[name] = bb[name] - rates["Close"]
+            self.signals += [name]
+
+        tenkan = 9
+        kijun = 26
+        senkou = 52
+        ichimoku = pd_ta.ichimoku(rates["High"], rates["Low"], rates["Close"], tenkan, kijun, senkou)[0]
+        for name in [f"ISA_{tenkan}",
+                     f"ISB_{kijun}",
+                     f"ITS_{tenkan}",
+                     f"IKS_{kijun}",
+                     ]:  # f"ICS_{kijun}"]:  # this is doing a forecast!!!
+            rates[name] = ichimoku[name] - rates["Close"]
             self.signals += [name]
 
         stoch_k = 14

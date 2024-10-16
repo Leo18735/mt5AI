@@ -10,7 +10,7 @@ class Model(abc.ABC):
         super().__init__(*args, **kwargs)
         self.x_train: pd.DataFrame = x_train
         self.mt5: MT5 = mt5
-        self.y: pd.Series = None
+        self.y = None
         self._scaler = None
         self._model = None
         self._model_shape = None
@@ -21,6 +21,8 @@ class Model(abc.ABC):
         x_train: np.ndarray = self._scaler.fit_transform(np.array(self.x_train[self.mt5.signals]))
         x_train = self._prepare_train(x_train, window)
         x_train, y_train = self._apply_mask(x_train, y_train)
+        y_t = y_train.tolist()
+        labels = {x: y_t.count(x) for x in set(y_t)}
         self._model = self.get_model()
         self._fit(x_train[:-1], y_train[1:])
 

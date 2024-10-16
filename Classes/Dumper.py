@@ -3,16 +3,18 @@ import pickle
 
 
 class Dumper:
-    def __init__(self, path_name: str):
+    def __init__(self, path_name: str, dump: bool = True):
         self._path_name: str = path_name
         self._values = self.load()
+        self._dump: bool = dump
 
     def add(self, result):
         self._values.append(result)
-        self._store()
+        if self._dump:
+            self._store()
 
     def load(self):
-        if not os.path.exists(self._path_name):
+        if not os.path.exists(self._path_name) or not self._dump:
             return []
         with open(self._path_name, "rb") as f:
             return pickle.load(f)
