@@ -3,7 +3,7 @@ import datetime
 import numpy as np
 import pandas_ta as pd_ta
 import MetaTrader5
-
+from Classes.Patterns import Patterns
 
 MetaTrader5.initialize()
 
@@ -14,8 +14,13 @@ class MT5:
         self.points = MetaTrader5.symbol_info(self._symbol).point
         self.signals: list[str] = []
 
-    def prepare_data(self, timeframe: int, amount: int, test_split: float) -> tuple[pd.DataFrame, pd.DataFrame]:
+    def prepare_data(self, timeframe: int, amount: int, test_split: float, verbose: bool = False) \
+            -> tuple[pd.DataFrame, pd.DataFrame]:
+        if verbose:
+            print("Get rates")
         rates: pd.DataFrame = self._get_rates(timeframe, amount)
+        if verbose:
+            print("Calculate normal signals")
         rates.Volume = 0
 
         rates["diff_open_close"] = rates["Close"] - rates["Open"]
@@ -80,8 +85,17 @@ class MT5:
             rates[name] = adx[name]
             self.signals += [name]
 
+        if verbose:
+            print("Calculate patterns")
+        rates, names = Patterns.apply_patterns(rates.copy())
+        self.signals += names
+
+        if verbose:
+            print("split")
         split_index: int = int(rates.shape[0] * (1 - test_split))
-        return rates.iloc[:split_index], rates.iloc[split_index:]
+        result = rates.iloc[:split_index], rates.iloc[split_index:]
+        print("Done")
+        return result
 
     def _get_rates(self, timeframe: int, amount: int) -> pd.DataFrame:
         rates = MetaTrader5.copy_rates_from(

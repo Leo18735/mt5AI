@@ -15,14 +15,19 @@ class Model(abc.ABC):
         self._model = None
         self._model_shape = None
 
+    @staticmethod
+    def _print_labels(y_train: np.ndarray):
+        y_list = y_train.tolist()
+        labels = {x: y_list.count(x) for x in set(y_list)}
+        print(f"Labels: {labels}")
+
     def train(self, window: int, direction: int):
         y_train = self.mt5.get_y(self.x_train, direction * self.mt5.points)
         self._scaler = self.get_scaler()
         x_train: np.ndarray = self._scaler.fit_transform(np.array(self.x_train[self.mt5.signals]))
         x_train = self._prepare_train(x_train, window)
         x_train, y_train = self._apply_mask(x_train, y_train)
-        y_t = y_train.tolist()
-        labels = {x: y_t.count(x) for x in set(y_t)}
+        self._print_labels(y_train)
         self._model = self.get_model()
         self._fit(x_train[:-1], y_train[1:])
 
