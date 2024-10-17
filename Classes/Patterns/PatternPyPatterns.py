@@ -1,4 +1,5 @@
 import pandas as pd
+from Classes.Patterns.Patterns import Patterns
 from PatternPy.tradingpatterns.tradingpatterns import (
     detect_head_shoulder,
     detect_multiple_tops_bottoms,
@@ -10,9 +11,10 @@ from PatternPy.tradingpatterns.tradingpatterns import (
     detect_trendline,
     find_pivots)
 
-class Patterns:
+
+class PatternPyPatters(Patterns):
     @staticmethod
-    def apply_patterns(rates: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
+    def get_pattern(rates: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
         all_names: list[str] = []
         data, name = detect_head_shoulder(rates.copy())
         all_names.append(name)

@@ -1,9 +1,10 @@
 import pandas as pd
 import datetime
 import numpy as np
-import pandas_ta as pd_ta
 import MetaTrader5
-from Classes.Patterns import Patterns
+from Classes.Patterns.ArticlePatterns import ArticlePatterns
+from Classes.Patterns.CustomPatterns import CustomPatterns
+from Classes.Patterns.PatternPyPatterns import PatternPyPatters
 
 MetaTrader5.initialize()
 
@@ -19,75 +20,21 @@ class MT5:
         if verbose:
             print("Get rates")
         rates: pd.DataFrame = self._get_rates(timeframe, amount)
-        if verbose:
-            print("Calculate normal signals")
         rates.Volume = 0
 
-        rates["diff_open_close"] = rates["Close"] - rates["Open"]
-        rates["diff_high_low"] = rates["High"] - rates["Low"]
-        rates["rsi_7"] = pd_ta.rsi(rates["Close"], length=7)
-        rates["rsi_14"] = pd_ta.rsi(rates["Close"], length=14)
-        rates["ema_10"] = pd_ta.ema(rates["Close"], length=10) - rates["Close"]
-        rates["ema_20"] = pd_ta.ema(rates["Close"], length=20) - rates["Close"]
-        rates["atr"] = pd_ta.atr(rates["High"], rates["Low"], rates["Close"], length=14, mamode="rma")
-        self.signals += ["diff_open_close", "diff_high_low",
-                         "rsi_7", "rsi_14",
-                         "ema_10", "ema_20",
-                         "atr"]
-
-        af0 = 0.02
-        max_af = 0.2
-        psar = pd_ta.psar(rates["High"], rates["Low"], rates["Close"], af0=af0, max_af=max_af)
-        psar[psar.isna()] = 0
-        for name in [f"PSARl_{af0}_{max_af}",
-                     f"PSARs_{af0}_{max_af}",
-                     f"PSARaf_{af0}_{max_af}",
-                     f"PSARr_{af0}_{max_af}"]:
-            rates[name] = psar[name] - rates["Close"]
-            self.signals += [name]
-
-        bb_length = 5
-        bb_std = 2.0
-        bb = pd_ta.bbands(rates["Close"], length=bb_length, std=bb_std)
-        for name in [f"BBL_{bb_length}_{bb_std}",
-                    f"BBM_{bb_length}_{bb_std}",
-                    f"BBU_{bb_length}_{bb_std}"]:
-            rates[name] = bb[name] - rates["Close"]
-            self.signals += [name]
-
-        tenkan = 9
-        kijun = 26
-        senkou = 52
-        ichimoku = pd_ta.ichimoku(rates["High"], rates["Low"], rates["Close"], tenkan, kijun, senkou)[0]
-        for name in [f"ISA_{tenkan}",
-                     f"ISB_{kijun}",
-                     f"ITS_{tenkan}",
-                     f"IKS_{kijun}",
-                     ]:  # f"ICS_{kijun}"]:  # this is doing a forecast!!!
-            rates[name] = ichimoku[name] - rates["Close"]
-            self.signals += [name]
-
-        stoch_k = 14
-        stoch_d = 3
-        stoch_smooth_k = 3
-        stoch = pd_ta.stoch(rates["High"], rates["Low"], rates["Close"], k=stoch_k, d=stoch_d, smooth_k=stoch_smooth_k)
-        for name in [f"STOCHk_{stoch_k}_{stoch_d}_{stoch_smooth_k}",
-                     f"STOCHd_{stoch_k}_{stoch_d}_{stoch_smooth_k}"]:
-            rates[name] = stoch[name]
-            self.signals += [name]
-
-        adx_length = 14
-        adx_lensig = adx_length
-        adx = pd_ta.adx(rates["High"], rates["Low"], rates["Close"], length=adx_length, adx_lensig=adx_lensig, scalar=100, mamode="rma")
-        for name in [f"ADX_{adx_lensig}",
-                     f"DMP_{adx_length}",
-                     f"DMN_{adx_length}"]:
-            rates[name] = adx[name]
-            self.signals += [name]
+        if verbose:
+            print("Calculate Custom signals")
+        rates, names = CustomPatterns.get_pattern(rates.copy())
+        self.signals += names
 
         if verbose:
-            print("Calculate patterns")
-        rates, names = Patterns.apply_patterns(rates.copy())
+            print("Calculate PatternPy signals")
+        rates, names = PatternPyPatters.get_pattern(rates.copy())
+        self.signals += names
+        
+        if verbose:
+            print("Calculate Article signals")
+        rates, names = ArticlePatterns.get_pattern(rates.copy())
         self.signals += names
 
         if verbose:
