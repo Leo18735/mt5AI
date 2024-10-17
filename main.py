@@ -13,7 +13,7 @@ from utils import create_variations, plot
 def main():
     symbol: str = "EURUSD"
     timeframe: int = MetaTrader5.TIMEFRAME_D1
-    amount: int = 15_000
+    amount: int = 20_000
     test_split: float = .15
     dump: bool = False
 
@@ -32,7 +32,7 @@ def main():
 
     variations = create_variations({
         "window": [25],
-        "direction": [250],
+        "direction": [200],
         "volume": [10_000]
     }, lambda x: True)
     data = {"symbol": symbol, "timeframe": timeframe, "amount": amount, "split": test_split}
@@ -55,11 +55,9 @@ def main():
         show_attrs = {x: result[1][x] for x in show}
         print(f"{result[1][sort]}: {show_attrs}: {result[0]['variation']}")
 
-    return
     print("\n")
-    print(bt.run(**sorted_result[0][0]["variation"]))
-    bt.plot()
-    plot(bt._data, bt._strategy.model.y)
+    print(sorted_result[0][1])
+    bt.plot(results=sorted_result[0][1])
 
 
 if __name__ == '__main__':
