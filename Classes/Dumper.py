@@ -5,8 +5,8 @@ import pickle
 class Dumper:
     def __init__(self, path_name: str, dump: bool = True):
         self._path_name: str = path_name
-        self._values = self.load()
         self._dump: bool = dump
+        self._values = self.load()
 
     def add(self, result):
         self._values.append(result)

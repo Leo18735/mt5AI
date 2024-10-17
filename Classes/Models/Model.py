@@ -1,4 +1,6 @@
 import abc
+import sys
+
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from Classes.MT5 import MT5
@@ -27,7 +29,9 @@ class Model(abc.ABC):
         x_train: np.ndarray = self._scaler.fit_transform(np.array(self.x_train[self.mt5.signals]))
         x_train = self._prepare_train(x_train, window)
         x_train, y_train = self._apply_mask(x_train, y_train)
-        self._print_labels(y_train)
+        if x_train.shape[0] == 0:
+            print("No train data!")
+            sys.exit(1)
         self._model = self.get_model()
         self._fit(x_train[:-1], y_train[1:])
 
